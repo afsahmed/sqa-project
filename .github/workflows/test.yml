@@ -30,10 +30,11 @@ jobs:
       DB_NAME_TEST: SQA-Project-Test
       DB_USER: postgres
       DB_PASS: admin
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
       DB_DIALECT: postgres
       JWT_SECRET: sqa-node-backend
+      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
 
     steps:
       - name: Checkout Repository
@@ -48,17 +49,44 @@ jobs:
         run: npm install
 
       - name: Run Unit Tests
-        run: npm test
-
-      - name: Save Test Report
-        if: always()
+        id: run_tests
         run: |
           mkdir -p reports
-          npx mocha --reporter mochawesome --reporter-options reportDir=reports,reportFilename=index
+          npx mocha "test/**/*.js" --reporter mochawesome --reporter-options reportDir=reports,reportFilename=index,quiet=true || echo "TESTS_FAILED=true" >> $GITHUB_ENV
 
-      - name: Upload Mocha Report
+      - name:  Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mocha-test-report
-          path: reports
+          name: mochawesome-report
+          path: reports/
+
+      - name: 📧 Send Email if Tests Fail
+        if: env.TESTS_FAILED == 'true'
+        run: |
+          echo "Some tests failed, sending email via SendGrid..."
+
+          cat << 'EOF' > send_email.js
+          const sgMail = require('@sendgrid/mail');
+          sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+          const msg = {
+            personalizations: [{ to: [{ email: 'afsahm2000@gmail.com' }] }],
+            from: { email: 'afsahahmed2000@gmail.com', name: 'SQA CI Bot' },
+            subject: 'SQA Project - Unit Tests Failed',
+            text: 'One or more unit tests failed in the latest workflow run on the dev branch. Please check the GitHub Actions report for details.',
+            html: `
+              <h2>Unit Tests Failed</h2>
+              <p>The latest CI pipeline for <b>SQA-Project</b> encountered test failures.</p>
+              <p><a href="https://github.com/${{ github.repository }}/actions">View Full Report on GitHub →</a></p>
+            `
+          };
+
+          sgMail
+            .send(msg)
+            .then(() => console.log('✅ Email sent successfully!'))
+            .catch((error) => console.error('❌ Error sending email:', error));
+          EOF
+
+          npm install @sendgrid/mail
+          node send_email.js
