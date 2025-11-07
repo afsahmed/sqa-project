@@ -49,13 +49,12 @@ jobs:
         run: npm install
 
       # Run Mocha tests (report generated even if they fail)
-      - name: Run Tests
-        run: |
-          mkdir -p reports
-          npx mocha "test/**/*.js" \
-            --reporter mochawesome \
-            --reporter-options reportDir=reports,reportFilename=mocha-report || echo "Tests failed (continuing for email)"
-
+- name: Run Tests
+  run: |
+    mkdir -p reports
+    npx mocha "test/**/*.js" \
+      --reporter mochawesome \
+      --reporter-options reportDir=reports,reportFilename=mocha-report
       # Upload artifact ONLY IF tests fail
       - name: Upload Test Report (only on failure)
         if: failure()

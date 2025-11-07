@@ -15,9 +15,9 @@ if (!fs.existsSync(reportPath)) {
 }
 
 const email = {
-  to: process.env.TO_EMAIL, // Your email
+  to: "afsahm@gmail.com", // Your email
   from: {
-    email: process.env.FROM_EMAIL,
+    email: "afsahahmed2000@gmail.com",
     name: 'SQA CI Bot'
   },
   subject: 'Test Run Failed: Mocha Report Attached',
