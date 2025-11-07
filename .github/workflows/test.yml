@@ -48,24 +48,29 @@ jobs:
         run: npm install
 
       - name: Run Tests and Generate Report
+        id: run_tests
         run: |
           mkdir -p reports
-          npx mocha "tests/**/*.js" --reporter mochawesome --reporter-options reportDir=reports,reportFilename=mocha-report || echo "Tests failed (continuing to allow email)"
+          set +e
+          npx mocha "tests/**/*.js" --reporter mochawesome --reporter-options reportDir=reports,reportFilename=mocha-report
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          set -e
 
       - name: Upload Test Report (Only if Failure)
-        if: failure()
+        if: steps.run_tests.outputs.exit_code != '0'
         uses: actions/upload-artifact@v4
         with:
           name: mocha-report
           path: reports/
 
       - name: Send Email Notification (Only if Failure)
-        if: failure()
+        if: steps.run_tests.outputs.exit_code != '0'
         run: |
           if [ -f reports/mocha-report.html ]; then
+            echo "Sending failure email..."
             node .github/scripts/sendEmail.js
           else
-            echo "⚠️ No report file found; skipping email."
+            echo "No report found; skipping email."
           fi
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
