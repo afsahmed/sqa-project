@@ -34,6 +34,7 @@ jobs:
       DB_PORT: 5432
       DB_DIALECT: postgres
       JWT_SECRET: sqa-node-backend
+      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
 
     steps:
       - name: Checkout Repository
@@ -47,32 +48,23 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests and Generate Report
-        id: run_tests
+      # Run Mocha tests (report generated even if they fail)
+      - name: Run Tests
         run: |
           mkdir -p reports
-          set +e
-          npx mocha "tests/**/*.js" --reporter mochawesome --reporter-options reportDir=reports,reportFilename=mocha-report
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
-          set -e
+          npx mocha "test/**/*.js" \
+            --reporter mochawesome \
+            --reporter-options reportDir=reports,reportFilename=mocha-report || echo "Tests failed (continuing for email)"
 
-      - name: Upload Test Report (Only if Failure)
-        if: steps.run_tests.outputs.exit_code != '0'
+      # Upload artifact ONLY IF tests fail
+      - name: Upload Test Report (only on failure)
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: mocha-report
           path: reports/
 
-      - name: Send Email Notification (Only if Failure)
-        if: steps.run_tests.outputs.exit_code != '0'
-        run: |
-          if [ -f reports/mocha-report.html ]; then
-            echo "Sending failure email..."
-            node .github/scripts/sendEmail.js
-          else
-            echo "No report found; skipping email."
-          fi
-        env:
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          TO_EMAIL: "afsahm2000@gmail.com"
-          FROM_EMAIL: "afsahahmed2000@gmail.com"
+      # Send email on failure
+      - name: Send Failure Email
+        if: failure()
+        run: node .github/scripts/sendEmail.js
