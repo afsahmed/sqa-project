@@ -93,6 +93,11 @@ describe('Authentication API', () => {
 
       expect(res.body.error).to.equal('email and password are required');
     });
+
+    /** INTENTIONAL FAILURE to test email workflow */
+    it('should intentionally fail to trigger email alert', async () => {
+      const fakeValue = 1;
+      expect(fakeValue).to.equal(2);
+    });
   });
 });
-
