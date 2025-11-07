@@ -25,6 +25,7 @@ npm test
 
 ## Sample env
 
+```
  DB_NAME=SQA-Project-Dev
  DB_USER=postgres
  DB_PASS=admin
@@ -42,4 +43,4 @@ npm test
  DEFAULT_ENCRYPTION_KEY=sqa-default-encryption-key
  SALT_ROUNDS=10
  ENV_DECRYPTION_KEY=sqa-env-encryption-key
-
+```
