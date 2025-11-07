@@ -52,7 +52,7 @@ jobs:
       - name: Run Tests
         run: |
           mkdir -p reports
-          npx mocha "tests/**/*.js" \
+          npx mocha "test/**/*.js" \
             --reporter mochawesome \
             --reporter-options reportDir=reports,reportFilename=mocha-report
       # Upload artifact ONLY IF tests fail
