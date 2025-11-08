@@ -73,6 +73,15 @@ jobs:
           echo "Generated report size:"
           ls -lh reports/mocha-report.html
 
+      - name: Zip Entire Reports Folder
+        if: failure()
+        run: |
+          cd reports
+          zip -r ../mocha-report.zip .
+          cd ..
+          echo "Zipped report size:"
+          ls -lh mocha-report.zip
+
       - name: Upload Test Report (only on failure)
         if: failure()
         uses: actions/upload-artifact@v4
@@ -80,20 +89,11 @@ jobs:
           name: mocha-report
           path: reports/
 
-      - name: Send Failure Email (only on failure)
+      - name: Send Failure Email with Zipped Report
         if: failure()
         run: |
-          echo "Preparing to send email notification..."
-          REPORT_PATH="reports/mocha-report.html"
-
-          if [ ! -f "$REPORT_PATH" ]; then
-            echo "Report not found, creating fallback text file..."
-            echo "Tests failed but no HTML report generated." > report.txt
-            REPORT_PATH="report.txt"
-          fi
-
-          echo "Encoding report..."
-          BASE64_CONTENT=$(base64 -w 0 "$REPORT_PATH")
+          echo "Encoding zip report..."
+          BASE64_CONTENT=$(base64 -w 0 mocha-report.zip)
 
           echo "Sending email via SendGrid..."
           curl --request POST \
@@ -103,16 +103,16 @@ jobs:
             --data "{
               \"personalizations\": [{
                 \"to\": [{\"email\": \"${TO_EMAIL}\"}],
-                \"subject\": \"Test Run Failed: Mocha Report Attached\"
+                \"subject\": \"Test Run Failed: Mochawesome Report Attached\"
               }],
               \"from\": {\"email\": \"${FROM_EMAIL}\", \"name\": \"SQA CI Bot\"},
               \"content\": [{
                 \"type\": \"text/plain\",
-                \"value\": \"One or more tests failed during CI. See attached Mochawesome report.\"
+                \"value\": \"One or more tests failed during CI. See attached Mochawesome report ZIP.\"
               }],
               \"attachments\": [{
                 \"content\": \"${BASE64_CONTENT}\",
-                \"type\": \"text/html\",
-                \"filename\": \"mocha-report.html\"
+                \"type\": \"application/zip\",
+                \"filename\": \"mocha-report.zip\"
               }]
             }"
