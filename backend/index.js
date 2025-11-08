@@ -63,6 +63,32 @@ const respondWithUser = user => ({
 /** STEP 08: Routes */
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
+/** Login Route */
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: 'email and password required' });
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(401).json({ error: 'invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'invalid credentials' });
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'development-secret',
+      { expiresIn: '24h' }
+    );
+
+    res.status(200).json({ message: 'login successful', token, user: respondWithUser(user) });
+  } catch (error) {
+    console.error('login error:', error);
+    res.status(500).json({ error: 'login failed' });
+  }
+});
+
 /** Optimized Register Endpoint (clean) */
 app.post('/api/register', async (req, res) => {
   try {
