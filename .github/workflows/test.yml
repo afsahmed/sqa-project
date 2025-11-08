@@ -50,12 +50,16 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests (Generate Report)
+      - name: Run Tests and Generate Inline Report
         run: |
           mkdir -p reports
+          # Run mocha with mochawesome reporter
           npx mocha "test/**/*.js" \
             --reporter mochawesome \
-            --reporter-options reportDir=reports,reportFilename=mocha-report,quiet=true
+            --reporter-options reportDir=reports,reportFilename=mocha-report,quiet=false,saveJson=true
+          
+          # Merge JSON reports (if multiple) and create fully inline HTML (no external JS/CSS)
+          npx mochawesome-merge reports/*.json | npx mochawesome-report-generator --reportDir reports --reportFilename mocha-report --inline
 
       - name: Upload Test Report (only on failure)
         if: failure()
@@ -92,7 +96,7 @@ jobs:
               \"from\": {\"email\": \"${FROM_EMAIL}\", \"name\": \"SQA CI Bot\"},
               \"content\": [{
                 \"type\": \"text/plain\",
-                \"value\": \"One or more tests failed in CI. See attached report.\"
+                \"value\": \"One or more tests failed during CI. See attached Mochawesome report.\"
               }],
               \"attachments\": [{
                 \"content\": \"${BASE64_CONTENT}\",
