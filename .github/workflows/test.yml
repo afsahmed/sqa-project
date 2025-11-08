@@ -50,16 +50,27 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests and Generate Inline Report
+      - name: Run Tests and Generate Fully Inline Report
         run: |
           mkdir -p reports
-          # Run mocha with mochawesome reporter
+
+          # Run mocha tests and generate JSON reports
           npx mocha "test/**/*.js" \
             --reporter mochawesome \
-            --reporter-options reportDir=reports,reportFilename=mocha-report,quiet=false,saveJson=true
-          
-          # Merge JSON reports (if multiple) and create fully inline HTML (no external JS/CSS)
-          npx mochawesome-merge reports/*.json | npx mochawesome-report-generator --reportDir reports --reportFilename mocha-report --inline
+            --reporter-options reportDir=reports,reportFilename=mocha-report,saveJson=true,quiet=false
+
+          # Merge all JSON reports (if multiple)
+          npx mochawesome-merge reports/*.json > reports/merged-output.json
+
+          # Generate fully self-contained HTML report (inline JS/CSS)
+          npx mochawesome-report-generator reports/merged-output.json \
+            --reportDir reports \
+            --reportFilename mocha-report \
+            --inline true \
+            --cdn false
+
+          echo "Generated report size:"
+          ls -lh reports/mocha-report.html
 
       - name: Upload Test Report (only on failure)
         if: failure()
@@ -73,7 +84,7 @@ jobs:
         run: |
           echo "Preparing to send email notification..."
           REPORT_PATH="reports/mocha-report.html"
-          
+
           if [ ! -f "$REPORT_PATH" ]; then
             echo "Report not found, creating fallback text file..."
             echo "Tests failed but no HTML report generated." > report.txt
