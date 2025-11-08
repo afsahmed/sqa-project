@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "mocha tests/**/*.js --reporter mochawesome --reporter-options reportDir=reports,reportFilename=index,quiet=true",
+    "test": "mocha test/**/*.js --reporter mochawesome --reporter-options reportDir=reports,reportFilename=index,quiet=true",
+    "generate-report": "npx mochawesome-merge reports/*.json > reports/merged-output.json && npx mochawesome-report-generator reports/merged-output.json --reportDir reports --reportFilename mocha-report --inline true --inlineAssets true --charts true --overwrite",
     "test:coverage": "nyc mocha ../test/**/*.test.js"
   },
   "keywords": [
