@@ -4,5 +4,5 @@ serverUrl=https://sonarcloud.io
 serverVersion=8.0.0.76401
 branch=main
 dashboardUrl=https://sonarcloud.io/dashboard?id=afsahmed_sqa-project&branch=main
-ceTaskId=AZpi1qO6EvCTUihWMZw6
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZpi1qO6EvCTUihWMZw6
+ceTaskId=AZpi-KVAc6uKnxYqTh7w
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZpi-KVAc6uKnxYqTh7w
