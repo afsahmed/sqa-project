@@ -68,7 +68,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
-      return res.status(400).json({ error: 'email and password required' });
+      return res.status(400).json({ error: 'email and password are required' });
 
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(401).json({ error: 'invalid credentials' });
@@ -82,19 +82,19 @@ app.post('/api/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.status(200).json({ message: 'login successful', token, user: respondWithUser(user) });
+    res.status(200).json({ message: 'logged in', token, user: respondWithUser(user) });
   } catch (error) {
     console.error('login error:', error);
     res.status(500).json({ error: 'login failed' });
   }
 });
 
-/** Optimized Register Endpoint (clean) */
+/** Optimized Register Endpoint */
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
     if (!username || !email || !password)
-      return res.status(400).json({ error: 'username, email, and password required' });
+      return res.status(400).json({ error: 'username, email, and password are required' });
 
     const existingUser = await User.findOne({ where: { [Op.or]: [{ username }, { email }] } });
     if (existingUser) return res.status(400).json({ error: 'user already exists' });
@@ -102,7 +102,11 @@ app.post('/api/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ username, email, password: hashedPassword });
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET || 'development-secret', { expiresIn: '24h' });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'development-secret',
+      { expiresIn: '24h' }
+    );
 
     res.status(201).json({ message: 'registered', token, user: respondWithUser(user) });
   } catch (error) {
