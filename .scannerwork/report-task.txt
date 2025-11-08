@@ -2,7 +2,7 @@ organization=sqa-pipeline
 projectKey=afsahmed_sqa-project
 serverUrl=https://sonarcloud.io
 serverVersion=8.0.0.76401
-branch=dev
-dashboardUrl=https://sonarcloud.io/dashboard?id=afsahmed_sqa-project&branch=dev&resolved=false
-ceTaskId=AZpix4i4AFChu01ehgbD
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZpix4i4AFChu01ehgbD
+branch=main
+dashboardUrl=https://sonarcloud.io/dashboard?id=afsahmed_sqa-project&branch=main
+ceTaskId=AZpi1qO6EvCTUihWMZw6
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZpi1qO6EvCTUihWMZw6
