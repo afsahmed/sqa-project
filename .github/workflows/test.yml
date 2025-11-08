@@ -50,52 +50,22 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests and Generate Fully Inline Report
+      - name: Run Tests and Capture Output
+        id: run_tests
         run: |
-          mkdir -p reports
+          # Run mocha and capture output including failures
+          mkdir -p test-output
+          npx mocha "test/**/*.js" --reporter spec 2>&1 | tee test-output/mocha-output.txt
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+        continue-on-error: true
 
-          # Run mocha tests and generate JSON reports
-          npx mocha "test/**/*.js" \
-            --reporter mochawesome \
-            --reporter-options reportDir=reports,reportFilename=mocha-report,saveJson=true,quiet=false
-
-          # Merge all JSON reports (if multiple)
-          npx mochawesome-merge reports/*.json > reports/merged-output.json
-
-          # Generate fully self-contained HTML report (inline CSS/JS)
-          npx mochawesome-report-generator reports/merged-output.json \
-            --reportDir reports \
-            --reportFilename mocha-report \
-            --inline true \
-            --inlineAssets true \
-            --cdn false
-
-          echo "Generated report size:"
-          ls -lh reports/mocha-report.html
-
-      - name: Zip Entire Reports Folder
-        if: failure()
+      - name: Send Failure Email
+        if: steps.run_tests.outputs.exit_code != '0'
         run: |
-          cd reports
-          zip -r ../mocha-report.zip .
-          cd ..
-          echo "Zipped report size:"
-          ls -lh mocha-report.zip
+          echo "Preparing test failure email..."
+          REPORT_CONTENT=$(cat test-output/mocha-output.txt | sed 's/"/\\"/g')
 
-      - name: Upload Test Report (only on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mocha-report
-          path: reports/
-
-      - name: Send Failure Email with Zipped Report
-        if: failure()
-        run: |
-          echo "Encoding zip report..."
-          BASE64_CONTENT=$(base64 -w 0 mocha-report.zip)
-
-          echo "Sending email via SendGrid..."
           curl --request POST \
             --url https://api.sendgrid.com/v3/mail/send \
             --header "Authorization: Bearer $SENDGRID_API_KEY" \
@@ -103,16 +73,11 @@ jobs:
             --data "{
               \"personalizations\": [{
                 \"to\": [{\"email\": \"${TO_EMAIL}\"}],
-                \"subject\": \"Test Run Failed: Mochawesome Report Attached\"
+                \"subject\": \"CI Test Failures\"
               }],
               \"from\": {\"email\": \"${FROM_EMAIL}\", \"name\": \"SQA CI Bot\"},
               \"content\": [{
                 \"type\": \"text/plain\",
-                \"value\": \"One or more tests failed during CI. See attached Mochawesome report ZIP.\"
-              }],
-              \"attachments\": [{
-                \"content\": \"${BASE64_CONTENT}\",
-                \"type\": \"application/zip\",
-                \"filename\": \"mocha-report.zip\"
+                \"value\": \"The following tests failed:\n\n${REPORT_CONTENT}\"
               }]
             }"
