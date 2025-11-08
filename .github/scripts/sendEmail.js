@@ -5,7 +5,7 @@ const sgMail = require('@sendgrid/mail');
 // Set API key from GitHub secret
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-console.log("Looking for report at:", path.resolve('reports', 'mocha-report.html'));
+console.log("Looking for report at:", path.resolve('reports', 'mocha-report.html'))
 // Define file path
 const reportPath = path.resolve('reports', 'mocha-report.html');
 
