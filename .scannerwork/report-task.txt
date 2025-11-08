@@ -1,0 +1,8 @@
+organization=sqa-pipeline
+projectKey=sqa-pipeline
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.76401
+branch=dev
+dashboardUrl=https://sonarcloud.io/dashboard?id=sqa-pipeline&branch=dev&resolved=false
+ceTaskId=AZpit2xoAFChu01ehgSv
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZpit2xoAFChu01ehgSv

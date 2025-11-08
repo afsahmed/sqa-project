@@ -111,6 +111,46 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+/** Unoptimized register endpoint */
+app.post('/api/register-unoptimized', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password)
+      return res.status(400).json({ error: 'username, email, and password are required' });
+
+    /** Simulate multiple DB lookups (unoptimized) */
+    const existingByUsername = await User.findOne({ where: { username } });
+    const existingByEmail = await User.findOne({ where: { email } });
+    if (existingByUsername || existingByEmail) return res.status(400).json({ error: 'user already exists' });
+
+    /** Simulate heavy hashing delay */
+    let hashedPassword = password;
+    for (let i = 0; i < 5; i++) { // repeat hashing multiple times to slow it down
+      hashedPassword = await bcrypt.hash(hashedPassword, 10);
+    }
+
+    /** Simulate unnecessary async processing */
+    await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+
+    const user = await User.create({ username, email, password: hashedPassword });
+
+    /** Simulate slow JWT signing (looped) */
+    let token;
+    for (let i = 0; i < 3; i++) {
+      token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET || 'development-secret',
+        { expiresIn: '24h' }
+      );
+    }
+
+    res.status(201).json({ message: 'registered-unoptimized', token, user: respondWithUser(user) });
+  } catch (error) {
+    console.error('register-unoptimized error:', error);
+    res.status(500).json({ error: 'registration failed (unoptimized)' });
+  }
+});
+
 /** STEP 09: DB Initialization */
 const initializeDatabase = async () => {
   await sequelize.authenticate();

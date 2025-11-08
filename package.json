@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "mocha test/**/*.js --reporter mochawesome --reporter-options reportDir=reports,reportFilename=index,quiet=true",
+    "test": "mocha test/**/*.js --reporter mochawesome --reporter-options reportDir=reports/unit,reportFilename=unit-test,quiet=true",
     "generate-report": "npx mochawesome-merge reports/*.json > reports/merged-output.json && npx mochawesome-report-generator reports/merged-output.json --reportDir reports --reportFilename mocha-report --inline true --inlineAssets true --charts true --overwrite",
     "test:coverage": "nyc mocha ../test/**/*.test.js"
   },
@@ -38,6 +38,7 @@
     "mochawesome-report-generator": "^6.2.0",
     "nodemon": "^3.0.2",
     "nyc": "^15.1.0",
+    "sonar-scanner": "^3.1.0",
     "supertest": "^6.3.3"
   }
 }
