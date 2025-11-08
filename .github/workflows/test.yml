@@ -62,11 +62,12 @@ jobs:
           # Merge all JSON reports (if multiple)
           npx mochawesome-merge reports/*.json > reports/merged-output.json
 
-          # Generate fully self-contained HTML report (inline JS/CSS)
+          # Generate fully self-contained HTML report (inline CSS/JS)
           npx mochawesome-report-generator reports/merged-output.json \
             --reportDir reports \
             --reportFilename mocha-report \
             --inline true \
+            --inlineAssets true \
             --cdn false
 
           echo "Generated report size:"
