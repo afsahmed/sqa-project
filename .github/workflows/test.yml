@@ -35,6 +35,8 @@ jobs:
       DB_DIALECT: postgres
       JWT_SECRET: sqa-node-backend
       SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      TO_EMAIL: ${{ secrets.TO_EMAIL }}
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
 
     steps:
       - name: Checkout Repository
@@ -48,14 +50,13 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # Run Mocha tests (report generated even if they fail)
-      - name: Run Tests
+      - name: Run Tests (Generate Report)
         run: |
           mkdir -p reports
           npx mocha "test/**/*.js" \
             --reporter mochawesome \
-            --reporter-options reportDir=reports,reportFilename=mocha-report
-      # Upload artifact ONLY IF tests fail
+            --reporter-options reportDir=reports,reportFilename=mocha-report,quiet=true
+
       - name: Upload Test Report (only on failure)
         if: failure()
         uses: actions/upload-artifact@v4
@@ -63,7 +64,39 @@ jobs:
           name: mocha-report
           path: reports/
 
-      # Send email on failure
-      - name: Send Failure Email
+      - name: Send Failure Email (only on failure)
         if: failure()
-        run: node .github/scripts/sendEmail.js
+        run: |
+          echo "Preparing to send email notification..."
+          REPORT_PATH="reports/mocha-report.html"
+          
+          if [ ! -f "$REPORT_PATH" ]; then
+            echo "Report not found, creating fallback text file..."
+            echo "Tests failed but no HTML report generated." > report.txt
+            REPORT_PATH="report.txt"
+          fi
+
+          echo "Encoding report..."
+          BASE64_CONTENT=$(base64 -w 0 "$REPORT_PATH")
+
+          echo "Sending email via SendGrid..."
+          curl --request POST \
+            --url https://api.sendgrid.com/v3/mail/send \
+            --header "Authorization: Bearer $SENDGRID_API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "{
+              \"personalizations\": [{
+                \"to\": [{\"email\": \"${TO_EMAIL}\"}],
+                \"subject\": \"Test Run Failed: Mocha Report Attached\"
+              }],
+              \"from\": {\"email\": \"${FROM_EMAIL}\", \"name\": \"SQA CI Bot\"},
+              \"content\": [{
+                \"type\": \"text/plain\",
+                \"value\": \"One or more tests failed in CI. See attached report.\"
+              }],
+              \"attachments\": [{
+                \"content\": \"${BASE64_CONTENT}\",
+                \"type\": \"text/html\",
+                \"filename\": \"mocha-report.html\"
+              }]
+            }"
